@@ -50,14 +50,14 @@ class Dqn():
         self.reward_window = []
         self.model = Network(input_size, nb_action)
         self.memory = ReplayMemory(100000)
-        self.optimizer = optim.Adam(self.model.parameters, lr=0.001)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
         self.last_state = torch.Tensor(input_size).unsqueeze(0)
         self.last_action = 0
         self.last_reward = 0
 
     def select_action(self, state):
-        probs = F.softmax(self.model(Variable(state, volatile=True)) * 7) # Temperature Parameter = 7
-        action = probs.multinomial()
+        probs = F.softmax(self.model(Variable(state, volatile=True)) * 100) # Temperature Parameter = 7
+        action = probs.multinomial(num_samples=1)
         return action.data[0,0]
     
     def learn(self, batch_state, batch_next_state, batch_reward, batch_action):
@@ -74,7 +74,7 @@ class Dqn():
         self.memory.push((self.last_state, new_state, torch.LongTensor([int(self.last_action)]), torch.Tensor([self.last_reward])))
         action = self.select_action(new_state)
         if len(self.memory.memory) > 100:
-            batch_state, batch_next_state, batch_reward, batch_action = self.memory.sample(100)
+            batch_state, batch_next_state, batch_action, batch_reward = self.memory.sample(100)
             self.learn(batch_state, batch_next_state, batch_reward, batch_action)
         self.last_action = action
         self.last_state = new_state
